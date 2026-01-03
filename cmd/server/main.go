@@ -6,6 +6,7 @@ import (
 
 	"goals-api/internal/db"
 	"goals-api/internal/models"
+	"goals-api/internal/routes"
 
 	"github.com/labstack/echo/v4"
 )
@@ -32,6 +33,9 @@ func main() {
 		log.Fatal(err)
 	}
 	log.Println("Migrations complete")
+
+	// register routes
+	routes.Register(e, database)
 
 	e.Start(":8080")
 }
