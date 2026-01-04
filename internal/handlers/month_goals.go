@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"net/http"
-	"time"
+	"slices"
+	"strings"
 
 	"goals-api/internal/models"
+	"goals-api/internal/validate"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
@@ -27,6 +29,7 @@ type MonthGoalResponse struct {
 	Title     string `json:"title"`
 	Completed bool   `json:"completed"`
 	Notes     string `json:"notes"`
+	CreatedAt string `json:"created_at"`
 }
 
 var ALLOWED_MONTH_GOAL_SORTED_COLUMNS = map[string]string{
@@ -34,7 +37,7 @@ var ALLOWED_MONTH_GOAL_SORTED_COLUMNS = map[string]string{
 	"year":      "year",
 	"title":     "title",
 	"completed": "completed",
-	"createdAt": "created_at",
+	"created_at": "created_at",
 }
 
 var ALLOWED_SORTED_DIRECTIONS = []string{"asc", "desc"}
@@ -46,11 +49,37 @@ func toMonthGoalResponse(m models.MonthGoal) MonthGoalResponse {
 		Title:     m.Title,
 		Completed: m.Completed,
 		Notes:     m.Notes,
+		CreatedAt: m.CreatedAt.Format("01-02-2006 at 03:04 pm"),
 	}
 }
 
 func NewMonthGoalHandler(db *gorm.DB) *MonthGoalHandler {
 	return &MonthGoalHandler{DB: db}
+}
+
+func parseSortParam(sort string) (string, bool) {
+	if sort == "" {
+		return "", false
+	}
+
+	parts := strings.Split(sort, ":")
+	if len(parts) != 2 {
+		return "", false
+	}
+
+	col := parts[0]
+	dir := parts[1]
+
+	column, ok := ALLOWED_MONTH_GOAL_SORTED_COLUMNS[col]
+	if !ok {
+		return "", false
+	}
+
+	if !slices.Contains(ALLOWED_SORTED_DIRECTIONS, dir) {
+		return "", false
+	}
+
+	return column + " " + dir, true
 }
 
 // essentially runs a: SELECT * FROM month_goals;
@@ -73,6 +102,12 @@ func (mg *MonthGoalHandler) List(c echo.Context) error {
 		query = query.Where("year = ? AND month = ?", year, month)
 	}
 
+	// optional sort
+	sortParam := c.QueryParam("sort")
+	if orderBy, ok := parseSortParam(sortParam); ok {
+		query = query.Order(orderBy)
+	}
+
 	if err := query.Find(&goals).Error; err != nil {
 		return c.String(http.StatusInternalServerError, "database error")
 	}
@@ -82,7 +117,7 @@ func (mg *MonthGoalHandler) List(c echo.Context) error {
 		response = append(response, toMonthGoalResponse(g))
 	}
 
-	return c.JSON(http.StatusOK, goals)
+	return c.JSON(http.StatusOK, response)
 }
 
 func (mg *MonthGoalHandler) Create(c echo.Context) error {
