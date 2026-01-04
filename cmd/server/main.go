@@ -26,6 +26,7 @@ func main() {
 	log.Println("Running migrations...")
 	err = database.AutoMigrate(
 		&models.MonthGoal{},
+		&models.MonthTodo{},
 		&models.WeekGoal{},
 		&models.WeekTodo{},
 	)
