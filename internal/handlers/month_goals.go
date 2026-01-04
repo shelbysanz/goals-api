@@ -2,8 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"slices"
-	"strings"
 
 	"goals-api/internal/models"
 	"goals-api/internal/validate"
@@ -23,6 +21,13 @@ type CreateMonthGoalRequest struct {
 	Completed bool   `json:"completed"`
 }
 
+type UpdateMonthGoalRequest struct {
+	Month     string `json:"month"`
+	Title     string `json:"title"`
+	Notes     string `json:"notes"`
+	Completed bool   `json:"completed"`
+}
+
 type MonthGoalResponse struct {
 	ID        uint   `json:"id"`
 	Month     string `json:"month"`
@@ -32,54 +37,8 @@ type MonthGoalResponse struct {
 	CreatedAt string `json:"created_at"`
 }
 
-var ALLOWED_MONTH_GOAL_SORTED_COLUMNS = map[string]string{
-	"month":     "month",
-	"year":      "year",
-	"title":     "title",
-	"completed": "completed",
-	"created_at": "created_at",
-}
-
-var ALLOWED_SORTED_DIRECTIONS = []string{"asc", "desc"}
-
-func toMonthGoalResponse(m models.MonthGoal) MonthGoalResponse {
-	return MonthGoalResponse{
-		ID:        m.ID,
-		Month:     validate.FormatMonthYear(m.Year, m.Month),
-		Title:     m.Title,
-		Completed: m.Completed,
-		Notes:     m.Notes,
-		CreatedAt: m.CreatedAt.Format("01-02-2006 at 03:04 pm"),
-	}
-}
-
 func NewMonthGoalHandler(db *gorm.DB) *MonthGoalHandler {
 	return &MonthGoalHandler{DB: db}
-}
-
-func parseSortParam(sort string) (string, bool) {
-	if sort == "" {
-		return "", false
-	}
-
-	parts := strings.Split(sort, ":")
-	if len(parts) != 2 {
-		return "", false
-	}
-
-	col := parts[0]
-	dir := parts[1]
-
-	column, ok := ALLOWED_MONTH_GOAL_SORTED_COLUMNS[col]
-	if !ok {
-		return "", false
-	}
-
-	if !slices.Contains(ALLOWED_SORTED_DIRECTIONS, dir) {
-		return "", false
-	}
-
-	return column + " " + dir, true
 }
 
 // essentially runs a: SELECT * FROM month_goals;
