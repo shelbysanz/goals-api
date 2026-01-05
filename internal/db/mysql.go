@@ -8,7 +8,7 @@ import (
 )
 
 func Open() (*gorm.DB, error) {
-	// data source name
+	// dsn: data source name
 	dsn := fmt.Sprintf(
 		"%s:%s@tcp(%s:%s)/%s?parseTime=true&charset=utf8mb4&loc=Local",
 		"g_user",

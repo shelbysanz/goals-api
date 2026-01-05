@@ -23,7 +23,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Println("Running migrations...")
 	err = database.AutoMigrate(
 		&models.MonthGoal{},
 		&models.MonthTodo{},

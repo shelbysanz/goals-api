@@ -41,7 +41,7 @@ func NewMonthGoalHandler(db *gorm.DB) *MonthGoalHandler {
 	return &MonthGoalHandler{DB: db}
 }
 
-// essentially runs a: SELECT * FROM month_goals;
+// essentially runs: SELECT * FROM month_goals;
 // marshals results to json and returns an HTTP 200 response
 func (mg *MonthGoalHandler) List(c echo.Context) error {
 	var goals []models.MonthGoal
