@@ -13,4 +13,6 @@ func Register(e *echo.Echo, db *gorm.DB) {
 	api := e.Group("/api")
 	api.GET("/month-goals", mg.List)
 	api.POST("/month-goals", mg.Create)
+	api.PUT("/month-goals/:id", mg.Update)
+	api.DELETE("/month-goals/:id", mg.Delete)
 }

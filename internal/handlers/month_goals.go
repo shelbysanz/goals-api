@@ -22,10 +22,10 @@ type CreateMonthGoalRequest struct {
 }
 
 type UpdateMonthGoalRequest struct {
-	Month     string `json:"month"`
-	Title     string `json:"title"`
-	Notes     string `json:"notes"`
-	Completed bool   `json:"completed"`
+	Month     *string `json:"month"`
+	Title     *string `json:"title"`
+	Notes     *string `json:"notes"`
+	Completed *bool   `json:"completed"`
 }
 
 type MonthGoalResponse struct {
@@ -108,4 +108,51 @@ func (mg *MonthGoalHandler) Create(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusCreated, toMonthGoalResponse(goal))
+}
+
+func (mg *MonthGoalHandler) Update(c echo.Context) error {
+	id := c.Param("id") // note this is param not query param
+	if id == "" {
+		return c.String(http.StatusBadRequest, "id is required")
+	}
+
+	var req UpdateMonthGoalRequest
+	if err := c.Bind(&req); err != nil {
+		return c.String(http.StatusBadRequest, "invalid JSON")
+	}
+
+	var goal models.MonthGoal
+	if err := mg.DB.First(&goal, id).Error; err != nil {
+		return c.String(http.StatusNotFound, "month goal not found")
+	}
+
+	patch, err := buildMonthGoalPatch(req)
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	applyMonthGoalPatch(&goal, patch)
+
+	if err := mg.DB.Save(&goal).Error; err != nil {
+		return c.String(http.StatusInternalServerError, "database error")
+	}
+
+	return c.JSON(http.StatusOK, toMonthGoalResponse(goal))
+}
+
+func (mg *MonthGoalHandler) Delete(c echo.Context) error {
+	id := c.Param("id")
+	if id == "" {
+		return c.String(http.StatusBadRequest, "id is required")
+	}
+
+	result := mg.DB.Delete(&models.MonthGoal{}, id)
+	if result.Error != nil {
+		return c.String(http.StatusInternalServerError, "database error")
+	}
+
+	if result.RowsAffected == 0 {
+		return c.String(http.StatusNotFound, "month goal not found")
+	}
+
+	return c.NoContent(http.StatusNoContent)
 }
